@@ -258,7 +258,22 @@ class ThresholdSelector:
         
         # Check if we found any valid thresholds
         if not valid_thresholds:
-            logger.warning(f"No thresholds found with recall ≥ {min_recall}")
+            message = f"No thresholds found with recall ≥ {min_recall}"
+            if use_confidence_interval:
+                # Provide a helpful explanation about confidence intervals
+                message += (
+                    " when using confidence intervals. This is because confidence "
+                    "intervals provide a more conservative estimate. The lower bounds "
+                    "of the confidence intervals for recall are below the minimum "
+                    "required value. Consider:\n"
+                    "1. Using a lower minimum recall requirement\n"
+                    "2. Using point estimates instead of confidence intervals\n"
+                    "3. Increasing your sample size to narrow confidence intervals\n"
+                    "Run export_to_dataframe() to examine the actual recall values and "
+                    "their confidence intervals."
+                )
+            logger.warning(message)
+            print(message)  # Print directly to user for visibility
             return None
         
         # Return the highest threshold that meets our criteria
@@ -417,6 +432,44 @@ class ThresholdSelector:
         logger.debug(f"Exported metrics to DataFrame with {len(df)} rows")
         return df
 
+    def explain_ci_behavior(self, min_recall: float = 0.9) -> None:
+        """
+        Provides an explanation of how confidence intervals affect threshold selection.
+        
+        This method helps users understand the difference between point estimates
+        and confidence intervals, especially when no thresholds meet the criteria
+        with confidence intervals enabled.
+        
+        Args:
+            min_recall: The minimum recall requirement to explain
+            
+        Returns:
+            None (prints explanation to console)
+        """
+        # Get standard thresholds and CI thresholds
+        standard_threshold = self.find_best_threshold(min_recall, use_confidence_interval=False)
+        ci_threshold = self.find_best_threshold(min_recall, use_confidence_interval=True)
+        
+        # Create a small summary table of key thresholds
+        df = self.export_to_dataframe()
+        key_columns = ['threshold', 'recall', 'recall_lower_ci', 'recall_upper_ci']
+        
+        print("\n=== Confidence Interval Explanation ===\n")
+        print(f"Using point estimates, the best threshold is: {standard_threshold}")
+        print(f"Using confidence intervals, the best threshold is: {ci_threshold}")
+        print("\nWhy the difference? Confidence intervals provide a more conservative estimate.")
+        print("When using confidence intervals, we require the LOWER BOUND of the recall")
+        print(f"confidence interval to be ≥ {min_recall}, not just the point estimate.")
+        print("\nHere's a summary of your data showing the confidence intervals:")
+        print(df[key_columns].to_string(index=False, float_format="%.4f"))
+        
+        print("\nOptions if you're getting None with confidence intervals:")
+        print("1. Use a lower minimum recall requirement")
+        print("2. Use point estimates instead (set use_confidence_interval=False)")
+        print("3. Increase your sample size to narrow confidence intervals")
+        print("4. Examine the DataFrame above to choose a threshold that balances")
+        print("   your tolerance for risk with your recall requirements")
+
 
 # Example usage function
 def find_best_threshold(
@@ -450,7 +503,14 @@ def find_best_threshold(
     
     # Create ThresholdSelector and find best threshold
     selector = ThresholdSelector(metrics_data)
-    return selector.find_best_threshold(min_recall, use_confidence_interval)
+    result = selector.find_best_threshold(min_recall, use_confidence_interval)
+    
+    # If using CI and no threshold found, provide additional explanation
+    if result is None and use_confidence_interval:
+        print("\nFor more details on confidence intervals and threshold selection:")
+        print("Call selector.explain_ci_behavior() for a detailed explanation")
+    
+    return result
 
 
 # Example demonstration code
@@ -479,6 +539,10 @@ def example_usage():
     # Find best threshold with confidence intervals (more conservative)
     best_threshold_ci = selector.find_best_threshold(min_recall=0.9, use_confidence_interval=True)
     print(f"Best threshold (with confidence intervals): {best_threshold_ci}")
+    
+    # If CI approach returns None, explain why
+    if best_threshold_ci is None and best_threshold is not None:
+        selector.explain_ci_behavior(min_recall=0.9)
     
     # Plot metrics
     selector.plot_metrics()
