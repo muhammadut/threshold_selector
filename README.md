@@ -19,11 +19,6 @@ When working with binary classification models, choosing the right threshold is 
 - **Visualization**: Plot performance metrics across different thresholds
 - **Reporting**: Generate detailed performance reports and export to pandas DataFrames
 
-## Installation
-
-```
-pip install threshold-selector
-```
 
 ## Usage
 
