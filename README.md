@@ -1,6 +1,6 @@
 # ThresholdSelector
 
-ThresholdSelector is a robust Python library for optimizing classification thresholds in binary classification models. It helps you select the optimal threshold for your model based on various performance criteria, with additional statistical confidence metrics.
+ThresholdSelector is for optimizing classification thresholds in binary classification models. It helps you select the optimal threshold for your model based on various performance criteria, with additional statistical confidence metrics.
 
 ## Overview
 
