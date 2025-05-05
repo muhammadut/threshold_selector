@@ -1,12 +1,10 @@
 from typing import List, Tuple, Optional, Dict
 from dataclasses import dataclass
-from scipy.stats import norm
 from statsmodels.stats.proportion import proportion_confint
 import matplotlib.pyplot as plt
 import logging
 import numpy as np
 import pandas as pd
-from typing import Union
 
 # Setup logging with appropriate level and format
 logging.basicConfig(
